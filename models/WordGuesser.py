@@ -24,11 +24,9 @@ class WordGuesser:
         self.load_wordlist()
 
     def load_wordlist(self):
-        wordlist_path = self.text_path
-        with open(wordlist_path, 'r') as file:
-            for line in file:
-                word = line.strip()  # Remove leading/trailing whitespaces
-                self.wordlist.append(word)
+        with open(self.text_path, 'r', encoding='utf-8') as f:
+            # unieke, lowercase woorden en gesorteerd voor binary search & prefix checks
+            self.wordlist = sorted({line.strip().lower() for line in f if line.strip()})
 
     def set_text_path(self, language):
         if language == "en":
@@ -153,13 +151,11 @@ class WordGuesser:
         visited[row][col] = False
 
     def is_word(self, word, boardsize):
-        # if the board is bigger than 4x4, the word needs to be at least 4 letters long
         if len(word) < 4 < boardsize:
             return False
-        # if the word is in the already found words, it is not a valid word
         if word in self.found_words:
             return False
-        return self.binary_search(word.lower())
+        return self.binary_search(word.lower()) != -1
 
     def is_prefix(self, prefix):
         return any(word.startswith(prefix.lower()) for word in self.wordlist)
@@ -180,10 +176,3 @@ class WordGuesser:
                 right = mid - 1
 
         return -1
-
-
-
-
-
-
-
