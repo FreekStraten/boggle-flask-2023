@@ -20,7 +20,7 @@ body{
   line-height: 1.5;
 }
 
-/* ===== Layout ===== */
+/* ===== Layout (game screen) ===== */
 .custom-container{
   display: flex;
   gap: 24px;
@@ -73,6 +73,9 @@ button:active{ transform: translateY(0); }
 .btn-primary{ background: var(--primary); color: #fff; }
 .btn-danger{ background: var(--danger); color: #fff; }
 .btn-ghost{ background: #e5e7eb; color: #111827; }
+/* opvallendere submit-knop */
+.btn-success{ background:#16a34a; color:#fff; }
+.btn-success:hover{ filter: brightness(0.95); }
 
 /* ===== Lists / Panels ===== */
 .list-container{
@@ -83,7 +86,6 @@ button:active{ transform: translateY(0); }
   box-shadow: var(--shadow);
   border: 1px solid #e5e7eb;
 }
-
 .list-container ul{ list-style: none; margin: 0; padding: 8px; }
 .list-container li{
   padding: 10px 12px;
@@ -97,3 +99,86 @@ button:active{ transform: translateY(0); }
 h1,h2,h3{ margin: 0 0 8px; }
 .muted{ color: var(--muted); }
 .center{ text-align: center; }
+
+/* ===================================================================== */
+/* ===================== Create Game — nieuwe styles ==================== */
+/* ===================================================================== */
+
+/* Flags */
+.flag{
+  width: 20px; height: 14px;
+  border-radius: 2px;
+  vertical-align: -2px;
+  margin-right: 8px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.08) inset;
+}
+
+/* Layout van de create-card */
+.page-center{
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  padding:56px 16px;
+}
+.card{
+  width:100%;
+  max-width:680px;
+  background:var(--surface);
+  border:1px solid #e5e7eb;
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:24px 28px;
+}
+.card h1{ margin-bottom:16px; }
+
+/* compactere inputs */
+.form-row{ margin-bottom:16px; }
+.form-row label{ display:block; font-weight:600; margin-bottom:6px; color:#334155; }
+.form-row .hint{ font-size:12px; color:var(--muted); }
+
+/* pill-radios */
+.pill-group{ display:flex; flex-wrap:wrap; gap:8px; }
+.pill-input{ position:absolute; opacity:0; pointer-events:none; }
+.pill{
+  display:inline-block; padding:8px 12px; border-radius:999px;
+  background:#eef2f7; border:1px solid #e5e7eb; cursor:pointer;
+  font-weight:600; user-select:none;
+}
+.pill-input:checked + .pill{
+  background: var(--primary); color:#fff; border-color:var(--primary);
+  box-shadow: var(--shadow);
+}
+
+/* board size preview + pijltjes */
+.board-picker{ display:flex; align-items:center; gap:12px; }
+.board-preview{
+  width:200px; padding:12px; background: var(--surface);
+  border:1px solid #e5e7eb; border-radius: var(--radius); box-shadow: var(--shadow);
+  display:grid; gap:8px;
+}
+.preview-cell{
+  border:2px solid #cbd5e1; border-radius:8px; aspect-ratio:1/1; background:#f8fafc;
+}
+
+/* nav buttons: perfect centreren */
+.nav-btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px; height: 40px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f1f5f9;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  user-select: none;
+}
+.nav-btn:hover{ background:#e2e8f0; }
+
+/* submit rechts */
+.form-actions{
+  display:flex;
+  justify-content:flex-end;
+  margin-top:12px;
+}

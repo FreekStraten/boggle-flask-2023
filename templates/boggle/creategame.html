@@ -1,39 +1,83 @@
 {% extends "layouts/base.html" %}
 {% block content %}
 
-    <!-- This is a create a game screen, where the user can create a game. Includes an input for board size -->
-    <div class="container">
+<div class="page-center">
+  <div class="card">
+    <h1>Create a Game</h1>
 
-        <h1>Create a Game</h1>
-        <form action="{{ url_for('game.create_game') }}" method="post">
-            <div class="form-group">
-                <label for="board_size">Board Size</label>
-                <select class="form-control" id="board_size" name="board_size">
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
-                    <option value="7">7</option>
-                    <option value="8">8</option>
-                    <option value="9">9</option>
-                </select>
+    <form action="{{ url_for('game.create_game') }}" method="post">
 
-                <label for="amount_time">Amount of Time</label>
-                <input class="form-control" id="amount_time" type="number" name="amount_time"
-                       placeholder="Enter amount of time">
+      <!-- Board size (preview + arrows) -->
+      <div class="form-row">
+        <label>Board Size</label>
+        <div class="board-picker">
+          <button type="button" class="nav-btn" id="sizePrev" aria-label="Previous">‹</button>
+          <div class="board-preview" id="boardPreview"></div>
+          <button type="button" class="nav-btn" id="sizeNext" aria-label="Next">›</button>
+        </div>
+        <div class="hint" id="sizeHint">3×3</div>
+        <input type="hidden" name="board_size" id="boardSize" value="3">
+      </div>
 
-                <label for="lang">Language</label>
-                <select class="form-control" id="lang" name="lang">
-                    <option value="en">English</option>
-                    <option value="nl">Dutch</option>
-                </select>
+      <!-- Time (fixed options, in seconds) -->
+      <div class="form-row">
+        <label>Time</label>
+        <div class="pill-group" role="group" aria-label="Time limit">
+          {% set times = [(0,"No timer"), (60,"1m"), (120,"2m"), (180,"3m"), (300,"5m"), (600,"10m")] %}
+          {% for sec, label in times %}
+            <input class="pill-input" type="radio" id="t{{sec}}" name="amount_time" value="{{sec}}" {% if sec==180 %}checked{% endif %}>
+            <label class="pill" for="t{{sec}}">{{label}}</label>
+          {% endfor %}
+        </div>
+      </div>
 
+      <!-- Language (flags via CDN) -->
+      <div class="form-row">
+        <label>Language</label>
+        <div class="pill-group" role="group" aria-label="Language">
+          <input class="pill-input" type="radio" id="en" name="lang" value="en" checked>
+          <label class="pill" for="en">
+            <img class="flag" src="https://flagcdn.com/gb.svg" alt="English"> English
+          </label>
 
-            </div>
+          <input class="pill-input" type="radio" id="nl" name="lang" value="nl">
+          <label class="pill" for="nl">
+            <img class="flag" src="https://flagcdn.com/nl.svg" alt="Nederlands"> Nederlands
+          </label>
+        </div>
+      </div>
 
-            <button type="submit" class="btn btn-primary mt-1">Create Game</button>
-        </form>
-    </div>
+      <div class="text-end">
+        <button type="submit" class="btn btn-success">Create Game</button>
+      </div>
+    </form>
+  </div>
+</div>
 
+<!-- mini JS voor de preview -->
+<script>
+(function(){
+  const min=3, max=9;
+  let size=3;
+  const input=document.getElementById('boardSize');
+  const hint=document.getElementById('sizeHint');
+  const preview=document.getElementById('boardPreview');
 
+  function render(){
+    preview.innerHTML='';
+    preview.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+    for(let i=0;i<size*size;i++){
+      const d=document.createElement('div');
+      d.className='preview-cell';
+      preview.appendChild(d);
+    }
+    input.value = String(size);
+    hint.textContent = `${size}×${size}`;
+  }
+
+  document.getElementById('sizePrev').addEventListener('click', ()=>{ if(size>min){ size--; render(); } });
+  document.getElementById('sizeNext').addEventListener('click', ()=>{ if(size<max){ size++; render(); } });
+  render();
+})();
+</script>
 {% endblock %}
