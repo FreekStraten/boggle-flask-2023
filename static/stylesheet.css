@@ -1,0 +1,49 @@
+body, html {
+    height: 100%;
+    margin: 0;
+}
+
+.grid-container {
+    display: grid;
+    grid-gap: 10px;
+    background-color: #f3f3f3;
+    padding: 10px;
+    height: auto;
+    width: 400px; /* Set a fixed width for the grid container */
+    margin: auto;
+}
+
+.grid-item {
+    background-color: #ccc;
+    padding: 20px;
+    text-align: center;
+    aspect-ratio: 1/1;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: center;
+}
+
+.custom-container {
+    display: flex;
+    justify-content: space-between;
+}
+
+.test1 {
+    width: 60%;
+}
+
+.test2 {
+    width: 40%;
+    margin-left: 20px;
+}
+
+
+
+
+
+.list-container {
+    max-height: 400px;
+    overflow-y: auto;
+}

@@ -1,0 +1,96 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+
+    <!-- align test1 and test2 side by side -->
+    <style>
+        .grid-container {
+            --board-size: {{ board_size }};
+        }
+    </style>
+
+    <!-- create a timer -->
+    <div class="d-flex justify-content-center align-items-center gap-1">
+        <p class="mr-2">Time Left:</p>
+        <p id="remaining-time"> {{ formatted_time }}</p>
+        <p> Game has ended! </p>
+    </div>
+
+    <p class="d-flex justify-content-center align-items-center gap-1">
+    board language: {{ lang }}
+    </p>
+
+    <h1 class="text-center">Score: {{ total_score }}</h1>
+    <br>
+
+
+    <div class="grid row">
+        <div class="col-md-4">
+            <div class="grid-container" style="grid-template-columns: repeat({{ board_size }}, 1fr);">
+                {% for _, die in dice %}
+                    {% if previous_letters %}
+                        <input hidden name="previous_letters" value="{{ previous_letters }}">
+                    {% endif %}
+
+                    {% set position_index = loop.index0 %}
+                    {% set last_selected_position = selected_positions[-1] if selected_positions else None %}
+
+                    <!-- if the current loop position index is the last selected position, color it darker -->
+                    {% if position_index == last_selected_position %}
+                        <button type="submit" name="position" value="{{ position_index }}"
+                                class="grid-item border border-dark rounded-10 btn btn-secondary"
+                                style="font-size: {{ font_size }}rem; background-color: green;">
+                            {{ die }}
+                        </button>
+                    {% elif position_index in selected_positions %}
+                        <!-- if the current loop position index is in the list of selected indexes, color it green -->
+                        <button type="submit" name="position" value="{{ position_index }}"
+                                class="grid-item border border-dark rounded-10 btn btn-secondary"
+                                style="font-size: {{ font_size }}rem; background-color: darkslategray;">
+                            {{ die }}
+                        </button>
+                    {% else %}
+                        <button type="submit" name="position" value="{{ position_index }}"
+                                class="grid-item border border-dark rounded-10 btn btn-secondary"
+                                style="font-size: {{ font_size }}rem;">
+                            {{ die }}
+                        </button>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+
+        <div class="text-center col-md-4">
+         <h5>Possible Words on this board:</h5>
+            <div class="list-container">
+                <ul class="list-group">
+                    {% for possiblity in possible_words %}
+                        {% if possiblity is defined %}
+                            <li class="list-group-item">{{ possiblity }} </li>
+                        {% else %}
+                            <li class="list-group-item">{{ possiblity }} | but something went wrong? <i
+                                    class="bi bi-x text-danger"></i></li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    <div class="text-center col-md-4">
+        <h5>Guessed Words:</h5>
+            <div class="list-container">
+                <ul class="list-group">
+                    {% for guess in guessed_words %}
+                        {% if guess.score is defined and guess.score is not none and guess.score > -1 %}
+                            <li class="list-group-item">{{ guess.word }} | {{ guess.score }} <i
+                                    class="bi bi-check2 text-success"></i></li>
+                        {% else %}
+                            <li class="list-group-item">{{ guess.word }} | {{ guess.score }} <i
+                                    class="bi bi-x text-danger"></i></li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+    </div>
+    </div>
+
+{% endblock %}

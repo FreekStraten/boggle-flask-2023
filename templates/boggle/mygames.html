@@ -1,0 +1,31 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+    <div class="container">
+        <h1 class="mt-4">My Games</h1>
+        <table class="table table-striped mt-4">
+            <thead>
+                <tr>
+                    <th>Game ID</th>
+                    <th>Grid Size</th>
+                    <th>Score</th>
+                    <th>Completion Time</th>
+                    <th>Amount Time</th>
+                    <th>Language</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for game in games %}
+                    <tr onclick="window.location.href='{{ url_for('game.boggle', game_id=game.id) }}'">
+                        <td>{{ game.id }}</td>
+                        <td>{{ game.grid_size }}</td>
+                        <td>{{ game.score }}</td>
+                        <td>{{ game.completion_time }}</td>
+                        <td>{{ game.amount_time }}</td>
+                        <td>{{ game.lang }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
