@@ -1,132 +1,153 @@
 {% extends "layouts/base.html" %}
 {% block content %}
 
-    <!-- align test1 and test2 side by side -->
-    <style>
-        .grid-container {
-            --board-size: {{ board_size }};
-        }
-    </style>
+<div id="game-root" class="container push-down"
+     style="--board-size: {{ board_size }}; --cell: 72px; --gap: .75rem;">
+  <div class="row justify-content-center g-4 align-items-stretch">
 
-    <!-- create a timer -->
-    <div class="d-flex justify-content-center align-items-center gap-1">
-        <p class="mr-2">Time Left:</p>
-        <p id="remaining-time"> {{ formatted_time }}</p>
-    </div>
-
-    <p class="d-flex justify-content-center align-items-center gap-1">
-        board language: {{ '🇬🇧' if lang == 'en' else '🇳🇱' }}
-    </p>
-
-    <div class="custom-container">
-        <div class="test1">
-            <div>
-                <h5 class="text-center">Current Word: {{ current_word }}</h5>
-            </div>
-
-            <form action="/boggle/{{ game.id }}" method="post" class="m-2">
-                <div class="grid-container" style="grid-template-columns: repeat({{ board_size }}, 1fr);">
-                    {% for _, die in dice %}
-                        {% if previous_letters %}
-                            <input hidden name="previous_letters" value="{{ previous_letters }}">
-                        {% endif %}
-
-                        {% set position_index = loop.index0 %}
-                        {% set last_selected_position = selected_positions[-1] if selected_positions else None %}
-
-                        <!-- if the current loop position index is the last selected position, color it darker -->
-                        {% if position_index == last_selected_position %}
-                            <button type="submit" name="position" value="{{ position_index }}"
-                                    class="grid-item border border-dark rounded-10 btn btn-secondary"
-                                    style="font-size: {{ font_size }}rem; background-color: green;">
-                                {{ die }}
-                            </button>
-                        {% elif position_index in selected_positions %}
-                            <!-- if the current loop position index is in the list of selected indexes, color it green -->
-                            <button type="submit" name="position" value="{{ position_index }}"
-                                    class="grid-item border border-dark rounded-10 btn btn-secondary"
-                                    style="font-size: {{ font_size }}rem; background-color: darkslategray;">
-                                {{ die }}
-                            </button>
-                        {% else %}
-                            <button type="submit" name="position" value="{{ position_index }}"
-                                    class="grid-item border border-dark rounded-10 btn btn-secondary"
-                                    style="font-size: {{ font_size }}rem;">
-                                {{ die }}
-                            </button>
-                        {% endif %}
-                    {% endfor %}
-                </div>
-            </form>
+    <!-- BORD -->
+    <div class="col-12 col-lg-6 d-flex">
+      <div class="card shadow-sm w-100">
+        <div class="card-header text-center py-2">
+          <strong>Current Word: </strong><span id="current-word">{{ current_word }}</span>
         </div>
 
+        <div class="card-body">
+          <form action="/boggle/{{ game.id }}" method="post" class="m-0">
+            {% if previous_letters %}
+              <input type="hidden" name="previous_letters" value="{{ previous_letters }}">
+            {% endif %}
 
-        <div class="text-center mt-3 test2">
-            <h5>Guessed Words:</h5>
-            <div class="list-container">
-                <ul class="list-group">
-                    {% for guess in guessed_words %}
-                        {% if guess.score is defined and guess.score is not none and guess.score > -1 %}
-                            <li class="list-group-item">{{ guess.word }} | {{ guess.score }} <i
-                                    class="bi bi-check2 text-success"></i></li>
-                        {% else %}
-                            <li class="list-group-item">{{ guess.word }} | {{ guess.score }} <i
-                                    class="bi bi-x text-danger"></i></li>
-                        {% endif %}
-                    {% endfor %}
-                </ul>
+            <div class="grid-container mx-auto">
+              {% for _, die in dice %}
+                {% set i = loop.index0 %}
+                {% set last = selected_positions[-1] if selected_positions else None %}
+                <button
+                  type="submit"
+                  name="position"
+                  value="{{ i }}"
+                  class="grid-item btn btn-secondary border rounded-3
+                         {% if i == last %} current {% elif i in selected_positions %} path {% endif %}"
+                  style="font-size: {{ font_size }}rem;">
+                  {{ die }}
+                </button>
+              {% endfor %}
             </div>
+          </form>
         </div>
+
+        <div class="card-footer bg-transparent py-2 d-flex gap-2">
+          <form action="/boggle/{{ game.id }}/reset" method="post" class="m-0">
+            <button type="submit" class="btn btn-outline-secondary">Reset</button>
+          </form>
+          <div class="ms-auto"></div>
+          <form action="/boggle/{{ game.id }}/submit" method="post" class="m-0">
+            <input type="hidden" name="word" value="{{ current_word }}">
+            <button type="submit" class="btn btn-primary">Submit word</button>
+          </form>
+        </div>
+      </div>
     </div>
 
-    <div class="text-center mt-3 d-flex justify-content-center gap-2">
-        <form action="/boggle/{{ game.id }}/reset" method="post">
-            <button type="submit" class="btn btn-secondary">Reset current selected letters</button>
-        </form>
-        <form action="/boggle/{{ game.id }}/submit" method="post">
-            <input hidden name="word" value="{{ current_word }}">
-            <button type="submit" class="btn btn-primary mr-2">Submit word</button>
-        </form>
-        <!-- button to end the game and show all available words -->
-        <form action="/boggle/{{ game.id }}/end" method="post">
-            <button type="submit" class="btn btn-danger">End game and show all words</button>
-        </form>
+    <!-- RECHTS: TIMER/TAAL + GUESSED -->
+    <div class="col-12 col-lg-4 d-flex">
+      <div class="card shadow-sm w-100">
+        <div class="card-header py-2">
+          <div class="d-flex align-items-center gap-2 justify-content-between">
+            <span class="fw-semibold">Guessed Words</span>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-dark">
+                <i class="bi bi-clock-fill me-1"></i>
+                <span id="remaining-time">{{ formatted_time }}</span>
+              </span>
+              <span class="badge bg-light text-dark border">
+                <img class="me-1" src="https://flagcdn.com/{{ 'gb' if lang=='en' else 'nl' }}.svg"
+                     width="20" height="14" alt="{{ 'English' if lang=='en' else 'Nederlands' }}">
+                {{ 'English' if lang=='en' else 'Nederlands' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div id="guessed-body" class="card-body p-0">
+          <ul class="list-group list-group-flush">
+            {% if guessed_words and guessed_words|length %}
+              {% for guess in guessed_words %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <span>{{ guess.word }}</span>
+                  {% if guess.score is defined and guess.score is not none and guess.score > -1 %}
+                    <span class="text-success d-inline-flex align-items-center">
+                      {{ guess.score }} <i class="bi bi-check2 ms-2"></i>
+                    </span>
+                  {% else %}
+                    <span class="text-danger d-inline-flex align-items-center">
+                      {{ guess.score }} <i class="bi bi-x ms-2"></i>
+                    </span>
+                  {% endif %}
+                </li>
+              {% endfor %}
+            {% else %}
+              <li class="list-group-item text-muted">Nog geen woorden…</li>
+            {% endif %}
+          </ul>
+        </div>
+
+        <div class="card-footer bg-transparent">
+          <form action="/boggle/{{ game.id }}/end" method="post" class="m-0">
+            <button type="submit" class="btn btn-danger w-100">End game</button>
+          </form>
+        </div>
+      </div>
     </div>
 
-    <script>
-        // Set the countdown time in seconds
-        var countdownTime = {{ amount_time }};
+  </div>
+</div>
 
-        // Get the timer element
-        var timerElement = document.getElementById('remaining-time');
+<style>
+  .grid-container{
+    display:grid;
+    grid-template-columns: repeat(var(--board-size), var(--cell));
+    grid-auto-rows: var(--cell);
+    gap: var(--gap);
+    justify-content:center;
+  }
+  .grid-item{
+    width: var(--cell);
+    height: var(--cell);
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  }
+  .grid-item.path{
+    background-color:#d1e7dd !important; color:#0f5132 !important; border-color:#badbcc !important;
+  }
+  .grid-item.current{
+    background-color:#198754 !important; color:#fff !important; border:2px solid #fff !important;
+    box-shadow:0 0 0 4px rgba(25,135,84,.35);
+  }
+  @media (max-width: 576px){
+    #game-root{ --cell: 56px; --gap: .5rem; }
+  }
 
-        // Function to format time as minutes and seconds
-        function formatTime(time) {
-            var minutes = Math.floor(time / 60);
-            var seconds = time % 60;
+    :root { --push: clamp(64px, 12vh, 160px); }     /* desktop lager, mobiel minder */
+    .push-down { padding-top: var(--push); padding-bottom: 2rem; }
 
-            // Add leading zeros to single-digit minutes and seconds
-            minutes = minutes < 10 ? '0' + minutes : minutes;
-            seconds = seconds < 10 ? '0' + seconds : seconds;
+    @media (max-width: 576px){
+    :root { --push: clamp(16px, 6vh, 56px); }     /* op kleine schermen niet te veel */
+    }
 
-            return minutes + ':' + seconds;
-        }
+    #guessed-body {
+  max-height: 300px;   /* kies wat goed uitkomt */
+  overflow-y: auto;    /* verticale scrollbar als nodig */
+}
+</style>
 
-        // Function to update the timer display
-        function updateTimer() {
-            var formattedTime = formatTime(countdownTime);
-            timerElement.innerText = formattedTime;
-            countdownTime--;
-
-            // Stop the timer when it reaches 0
-            if (countdownTime < 0) {
-                clearInterval(timerInterval);
-                timerElement.innerText = "Time's up!";
-            }
-        }
-
-        // Update the timer every second
-        var timerInterval = setInterval(updateTimer, 1000);
-    </script>
+<script>
+  // Timer (simpel)
+  let t = {{ amount_time }};
+  const el = document.getElementById('remaining-time');
+  const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+  const tick = () => { if (t < 0) { clearInterval(id); el.textContent = "Time's up!"; return; } el.textContent = fmt(t--); };
+  const id = setInterval(tick, 1000); tick();
+</script>
 
 {% endblock %}
