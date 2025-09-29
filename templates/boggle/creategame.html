@@ -15,8 +15,8 @@
           <div class="board-preview" id="boardPreview"></div>
           <button type="button" class="nav-btn" id="sizeNext" aria-label="Next">›</button>
         </div>
-        <div class="hint" id="sizeHint">3×3</div>
-        <input type="hidden" name="board_size" id="boardSize" value="3">
+        <div class="hint" id="sizeHint">4x4</div>
+        <input type="hidden" name="board_size" id="boardSize" value="4">
       </div>
 
       <!-- Time (fixed options, in seconds) -->
@@ -58,7 +58,7 @@
 <script>
 (function(){
   const min=3, max=9;
-  let size=3;
+  let size=4;
   const input=document.getElementById('boardSize');
   const hint=document.getElementById('sizeHint');
   const preview=document.getElementById('boardPreview');
@@ -72,7 +72,7 @@
       preview.appendChild(d);
     }
     input.value = String(size);
-    hint.textContent = `${size}×${size}`;
+    hint.textContent = `${size}x${size}`;
   }
 
   document.getElementById('sizePrev').addEventListener('click', ()=>{ if(size>min){ size--; render(); } });
@@ -81,3 +81,4 @@
 })();
 </script>
 {% endblock %}
+

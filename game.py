@@ -168,7 +168,20 @@ def submit_word(game_id):
         return redirect(url_for('auth.login'))
 
     if request.method == 'POST':
-        word = request.form['word']
+        raw_word = request.form.get('word', '')
+        word = raw_word.strip()
+        if not word:
+            reset_current_selections()
+            return redirect(url_for('game.boggle', game_id=game_id))
+
+        duplicate = select_query(
+            'SELECT 1 FROM guessed_words WHERE game_id = ? AND LOWER(word) = ? LIMIT 1',
+            (game_id, word.lower())
+        )
+        if duplicate:
+            reset_current_selections()
+            return redirect(url_for('game.boggle', game_id=game_id))
+
         # Perform validation and scoring logic here
         score = validate_word(word)
 

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, g, blueprints, session
+from flask import Flask, redirect, url_for, session
 import pickle
 from auth import auth
 from game import game
@@ -11,7 +11,7 @@ app.register_blueprint(game)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    return render_template('index.html')
+    return redirect(url_for('game.create_game'))
 
 
 @app.route('/debug', methods=['POST'])
@@ -29,3 +29,5 @@ if __name__ == '__main__':
     # for debugging, we use a static hard coded secret key
     app.secret_key = 'fiawhfiuawhfiowajofijwiof'
     app.run()
+
+
