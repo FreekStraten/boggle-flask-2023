@@ -142,54 +142,58 @@
 </style>
 
 <script>
-  const endForm = document.getElementById("end-game-form");
-  const remainingEl = document.getElementById("remaining-time");
-  const rawTime = '{{ amount_time|default(0, true) }}';
-  let timeLeft = Number(rawTime);
-  if (!Number.isFinite(timeLeft)) {
-    timeLeft = 0;
-  }
-  timeLeft = Math.max(0, Math.floor(timeLeft));
-  let hasEnded = false;
+(() => {
+  const endForm = document.getElementById('end-game-form');
+  const remainingEl = document.getElementById('remaining-time');
 
-  const formatTime = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return String(minutes).padStart(2, "0") + ":" + String(secs).padStart(2, "0");
+  // Zorg dat we een echt getal hebben
+  let t = parseInt('{{ amount_time|default(0)|int }}', 10);
+  if (Number.isNaN(t) || t < 0) t = 0;
+
+  let ended = false;
+  const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+
+  const disableUI = () => {
+    document.querySelectorAll('button, input, a.btn').forEach(el => el.setAttribute('disabled', 'disabled'));
   };
 
   const endGame = () => {
-    if (hasEnded) {
-      return;
-    }
-    hasEnded = true;
+    if (ended) return;
+    ended = true;
+    disableUI();
+    if (remainingEl) remainingEl.textContent = "Time's up!";
+
+    // Submit het bestaande formulier → werkt ook met CSRF/session
     if (endForm) {
       endForm.submit();
-    } else if (remainingEl) {
-      remainingEl.textContent = "Time is up!";
+      return;
     }
+    // Fallback: ga naar de eindpagina
+    window.location.href = '/boggle/{{ game.id }}/end';
   };
 
+  // Tick om de klok te tonen
   const tick = () => {
-    if (!remainingEl) {
-      endGame();
-      return;
-    }
-
-    if (timeLeft <= 0) {
-      remainingEl.textContent = formatTime(0);
-      clearInterval(timerId);
-      endGame();
-      return;
-    }
-
-    remainingEl.textContent = formatTime(timeLeft);
-    timeLeft -= 1;
+    if (remainingEl) remainingEl.textContent = fmt(Math.max(0, t));
+    if (t <= 0) return;
+    t -= 1;
   };
 
-  let timerId = setInterval(tick, 1000);
+  // Start direct en dan elke seconde
   tick();
+  const intervalId = setInterval(() => {
+    tick();
+    if (t <= 0) {
+      clearInterval(intervalId);
+      endGame();
+    }
+  }, 1000);
+
+  // Extra veiligheidsnet: forceer einde na t seconden (zelfs als interval stopt)
+  setTimeout(endGame, Math.max(0, t) * 1000 + 200);
+})();
 </script>
+
 
 {% endblock %}
 
