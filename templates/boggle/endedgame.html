@@ -1,96 +1,127 @@
 {% extends "layouts/base.html" %}
 {% block content %}
 
-    <!-- align test1 and test2 side by side -->
-    <style>
-        .grid-container {
-            --board-size: {{ board_size }};
-        }
-    </style>
+<div id="game-root" class="container push-down"
+     style="--board-size: {{ board_size }}; --cell: 72px; --gap: .75rem;">
+  <div class="row justify-content-center g-4 align-items-stretch">
 
-    <!-- create a timer -->
-    <div class="d-flex justify-content-center align-items-center gap-1">
-        <p class="mr-2">Time Left:</p>
-        <p id="remaining-time"> {{ formatted_time }}</p>
-        <p> Game has ended! </p>
-    </div>
-
-    <p class="d-flex justify-content-center align-items-center gap-1">
-    board language: {{ lang }}
-    </p>
-
-    <h1 class="text-center">Score: {{ total_score }}</h1>
-    <br>
-
-
-    <div class="grid row">
-        <div class="col-md-4">
-            <div class="grid-container" style="grid-template-columns: repeat({{ board_size }}, 1fr);">
-                {% for _, die in dice %}
-                    {% if previous_letters %}
-                        <input hidden name="previous_letters" value="{{ previous_letters }}">
-                    {% endif %}
-
-                    {% set position_index = loop.index0 %}
-                    {% set last_selected_position = selected_positions[-1] if selected_positions else None %}
-
-                    <!-- if the current loop position index is the last selected position, color it darker -->
-                    {% if position_index == last_selected_position %}
-                        <button type="submit" name="position" value="{{ position_index }}"
-                                class="grid-item border border-dark rounded-10 btn btn-secondary"
-                                style="font-size: {{ font_size }}rem; background-color: green;">
-                            {{ die }}
-                        </button>
-                    {% elif position_index in selected_positions %}
-                        <!-- if the current loop position index is in the list of selected indexes, color it green -->
-                        <button type="submit" name="position" value="{{ position_index }}"
-                                class="grid-item border border-dark rounded-10 btn btn-secondary"
-                                style="font-size: {{ font_size }}rem; background-color: darkslategray;">
-                            {{ die }}
-                        </button>
-                    {% else %}
-                        <button type="submit" name="position" value="{{ position_index }}"
-                                class="grid-item border border-dark rounded-10 btn btn-secondary"
-                                style="font-size: {{ font_size }}rem;">
-                            {{ die }}
-                        </button>
-                    {% endif %}
-                {% endfor %}
-            </div>
+    <!-- LINKS: FINAL BOARD -->
+    <div class="col-12 col-lg-6 d-flex">
+      <div class="card shadow-sm w-100">
+        <div class="card-header text-center py-2">
+          <strong>Final board</strong>
         </div>
 
-
-        <div class="text-center col-md-4">
-         <h5>Possible Words on this board:</h5>
-            <div class="list-container">
-                <ul class="list-group">
-                    {% for possiblity in possible_words %}
-                        {% if possiblity is defined %}
-                            <li class="list-group-item">{{ possiblity }} </li>
-                        {% else %}
-                            <li class="list-group-item">{{ possiblity }} | but something went wrong? <i
-                                    class="bi bi-x text-danger"></i></li>
-                        {% endif %}
-                    {% endfor %}
-                </ul>
-            </div>
+        <div class="card-body">
+          <div class="grid-container mx-auto">
+            {% for _, die in dice %}
+              <div class="grid-item btn btn-secondary border rounded-3 disabled"
+                   style="font-size: {{ font_size }}rem;">
+                {{ die }}
+              </div>
+            {% endfor %}
+          </div>
         </div>
-    <div class="text-center col-md-4">
-        <h5>Guessed Words:</h5>
-            <div class="list-container">
-                <ul class="list-group">
-                    {% for guess in guessed_words %}
-                        {% if guess.score is defined and guess.score is not none and guess.score > -1 %}
-                            <li class="list-group-item">{{ guess.word }} | {{ guess.score }} <i
-                                    class="bi bi-check2 text-success"></i></li>
-                        {% else %}
-                            <li class="list-group-item">{{ guess.word }} | {{ guess.score }} <i
-                                    class="bi bi-x text-danger"></i></li>
-                        {% endif %}
-                    {% endfor %}
-                </ul>
-            </div>
-    </div>
+
+        <div class="card-footer bg-transparent py-2 d-flex align-items-center gap-2">
+          <span class="badge bg-dark">
+            <i class="bi bi-clock-fill me-1"></i>{{ initial_time_fmt }}
+          </span>
+          <span class="badge bg-light text-dark border">
+            <img class="me-1" src="https://flagcdn.com/{{ 'gb' if lang=='en' else 'nl' }}.svg"
+                 width="20" height="14"
+                 alt="{{ 'English' if lang=='en' else 'Nederlands' }}">
+            {{ 'English' if lang=='en' else 'Nederlands' }}
+          </span>
+          <span class="ms-auto badge bg-success">Score: {{ total_score }}</span>
+        </div>
+      </div>
     </div>
 
+    <!-- RECHTS: Guessed words | Possible words -->
+    <div class="col-12 col-lg-6 d-flex">
+      <div class="card shadow-sm w-100 d-flex flex-column">
+        <div class="card-header py-2">
+          <div class="row">
+            <div class="col-6 fw-semibold">Guessed words</div>
+            <div class="col-6 text-end fw-semibold">Possible words on this board</div>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="row g-3">
+            <!-- Guessed -->
+            <div class="col-12 col-md-6">
+              <ul class="list-group end-list">
+                {% if guessed_words and guessed_words|length %}
+                  {% for guess in guessed_words %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      <span>{{ guess.word }}</span>
+                      {% if guess.score is defined and guess.score is not none and guess.score > -1 %}
+                        <span class="text-success d-inline-flex align-items-center">
+                          {{ guess.score }} <i class="bi bi-check2 ms-2"></i>
+                        </span>
+                      {% else %}
+                        <span class="text-danger d-inline-flex align-items-center">
+                          {{ guess.score }} <i class="bi bi-x ms-2"></i>
+                        </span>
+                      {% endif %}
+                    </li>
+                  {% endfor %}
+                {% else %}
+                  <li class="list-group-item text-muted">No words…</li>
+                {% endif %}
+              </ul>
+            </div>
+
+            <!-- Possible -->
+            <div class="col-12 col-md-6">
+              <ul class="list-group end-list">
+                {% if possible_words and possible_words|length %}
+                  {% for p in possible_words %}
+                    <li class="list-group-item">{{ p }}</li>
+                  {% endfor %}
+                {% else %}
+                  <li class="list-group-item text-muted">No suggestions…</li>
+                {% endif %}
+              </ul>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+  .grid-container{
+    display:grid;
+    grid-template-columns: repeat(var(--board-size), var(--cell));
+    grid-auto-rows: var(--cell);
+    gap: var(--gap);
+    justify-content:center;
+  }
+  .grid-item{
+    width: var(--cell);
+    height: var(--cell);
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    pointer-events: none;
+  }
+  @media (max-width: 576px){
+    #game-root{ --cell: 56px; --gap: .5rem; }
+  }
+
+  :root { --push: clamp(64px, 12vh, 160px); }
+  .push-down { padding-top: var(--push); padding-bottom: 2rem; }
+
+  @media (max-width: 576px){
+    :root { --push: clamp(16px, 6vh, 56px); }
+  }
+
+  /* Scrollbare lijsten */
+  .end-list{ max-height: 360px; overflow-y: auto; }
+</style>
 {% endblock %}

@@ -1,31 +1,120 @@
 {% extends "layouts/base.html" %}
-
 {% block content %}
-    <div class="container">
-        <h1 class="mt-4">My Games</h1>
-        <table class="table table-striped mt-4">
-            <thead>
+
+<!-- bredere container en minder top-padding -->
+<div id="games-root" class="container-xxl push-down-tight">
+  <div class="row justify-content-center">
+    <div class="col-12">
+
+      <div class="d-flex align-items-center mb-3">
+        <h1 class="h2 m-0">My Games</h1>
+        <div class="ms-auto">
+          <a href="{{ url_for('game.create_game') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Create game
+          </a>
+        </div>
+      </div>
+
+      <div class="card shadow-sm">
+        <div class="card-body p-0">
+
+          {# helper om seconden als mm:ss te tonen #}
+          {% macro mmss(val) -%}
+            {%- set sec = (val|int) if val is not none else 0 -%}
+            {%- if sec < 0 -%}{%- set sec = 0 -%}{%- endif -%}
+            {{ "%02d:%02d"|format(sec // 60, sec % 60) }}
+          {%- endmacro %}
+
+          {% if games and games|length %}
+          <div class="table-responsive">
+            <table class="table table-hover table-nowrap align-middle mb-0">
+              <thead class="table-light sticky-top">
                 <tr>
-                    <th>Game ID</th>
-                    <th>Grid Size</th>
-                    <th>Score</th>
-                    <th>Completion Time</th>
-                    <th>Amount Time</th>
-                    <th>Language</th>
+                  <th class="text-muted small fw-semibold">ID</th>
+                  <th class="text-muted small fw-semibold">Grid</th>
+                  <th class="text-muted small fw-semibold">Score</th>
+                  <th class="text-muted small fw-semibold">Completion&nbsp;Time</th>
+                  <th class="text-muted small fw-semibold">Amount&nbsp;Time</th>
+                  <th class="text-muted small fw-semibold">Language</th>
+                  <th class="text-muted small fw-semibold">Status</th>
                 </tr>
-            </thead>
-            <tbody>
-                {% for game in games %}
-                    <tr onclick="window.location.href='{{ url_for('game.boggle', game_id=game.id) }}'">
-                        <td>{{ game.id }}</td>
-                        <td>{{ game.grid_size }}</td>
-                        <td>{{ game.score }}</td>
-                        <td>{{ game.completion_time }}</td>
-                        <td>{{ game.amount_time }}</td>
-                        <td>{{ game.lang }}</td>
-                    </tr>
+              </thead>
+              <tbody>
+                {% for g in games %}
+                <tr class="click-row" data-href="{{ url_for('game.boggle', game_id=g.id) }}">
+                  <td class="fw-semibold">{{ g.id }}</td>
+                  <td>{{ g.grid_size }}×{{ g.grid_size }}</td>
+                  <td>
+                    {% if g.score is not none %}
+                      {% set sc = g.score|int %}
+                      <span class="badge {% if sc>0 %}bg-success{% elif sc<0 %}bg-danger{% else %}bg-secondary{% endif %}">
+                        {{ sc }}
+                      </span>
+                    {% else %}
+                      <span class="text-muted">—</span>
+                    {% endif %}
+                  </td>
+                  <td><code class="small">{{ mmss(g.completion_time) }}</code></td>
+                  <td><code class="small">{{ mmss(g.amount_time) }}</code></td>
+                  <td>
+                    <span class="d-inline-flex align-items-center gap-1">
+                      <img src="https://flagcdn.com/{{ 'gb' if g.lang=='en' else 'nl' }}.svg"
+                           width="18" height="12" alt="{{ g.lang|upper }}">
+                      <span class="text-uppercase small">{{ g.lang }}</span>
+                    </span>
+                  </td>
+                  <td>
+                    {% set ended = (g.has_ended if 'has_ended' in g else 0) %}
+                    <span class="badge {{ 'bg-success' if ended else 'bg-warning text-dark' }}">
+                      {{ 'Ended' if ended else 'Active' }}
+                    </span>
+                  </td>
+                </tr>
                 {% endfor %}
-            </tbody>
-        </table>
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+            <div class="p-4 text-center text-muted">
+              No games yet. Start a new one to see it here.
+            </div>
+          {% endif %}
+
+        </div>
+      </div>
+
     </div>
+  </div>
+</div>
+
+<style>
+  /* minder top-space t.o.v. andere pagina's */
+  .push-down-tight { padding-top: clamp(28px, 7vh, 72px); padding-bottom: 2rem; }
+
+  /* maak het geheel lekker breed */
+  .container-xxl { max-width: 1440px; }      /* vergroot boven Bootstrap's 1320px */
+  @media (min-width: 1600px){
+    .container-xxl { max-width: 1600px; }    /* ultra-wide schermen */
+  }
+
+  /* compactere tabel zodat er meer in de breedte past */
+  .table td, .table th { padding: .55rem .75rem; }
+  .table-nowrap td, .table-nowrap th { white-space: nowrap; }
+
+  .click-row { cursor: pointer; }
+  .click-row:hover { background: rgba(0,0,0,.03); }
+
+  .sticky-top { position: sticky; top: 0; z-index: 1; }
+</style>
+
+<script>
+  // Hele rij klikbaar
+  document.querySelectorAll('.click-row').forEach(tr=>{
+    tr.addEventListener('click', ()=>{
+      const href = tr.getAttribute('data-href');
+      if (href) window.location.href = href;
+    });
+  });
+</script>
+
 {% endblock %}

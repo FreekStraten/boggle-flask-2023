@@ -120,13 +120,19 @@ h1,h2,h3{ margin: 0 0 8px; }
   align-items:flex-start;
   padding:56px 16px;
 }
+
+/* Globale card-upgrades (géén max-width hier!) */
 .card{
-  width:100%;
-  max-width:680px;
   background:var(--surface);
   border:1px solid #e5e7eb;
   border-radius:var(--radius);
   box-shadow:var(--shadow);
+}
+
+/* Alleen de create-pagina krijgt een smalle kaart */
+.create-card{
+  width:100%;
+  max-width:680px;
   padding:24px 28px;
 }
 .card h1{ margin-bottom:16px; }

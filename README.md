@@ -3,6 +3,9 @@
 Eén-speler Boggle als Python/Flask webapp. Woordenvalidatie, timer/training-modus en basisstatistieken.  
 **Status:** Archived · **Rol:** Duo (coursework) · **Jaar:** 2023
 
+## Demo
+![Demo](docs/demo.gif)
+
 ## Tech stack
 Python · Flask · Jinja2 · SQLite
 

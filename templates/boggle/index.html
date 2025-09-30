@@ -5,9 +5,9 @@
      style="--board-size: {{ board_size }}; --cell: 72px; --gap: .75rem;">
   <div class="row justify-content-center g-4 align-items-stretch">
 
-    <!-- BORD -->
+    <!-- LINKS: BORD -->
     <div class="col-12 col-lg-6 d-flex">
-      <div class="card shadow-sm w-100">
+      <div class="card shadow-sm w-100 d-flex flex-column">
         <div class="card-header text-center py-2">
           <strong>Current Word: </strong><span id="current-word">{{ current_word }}</span>
         </div>
@@ -51,10 +51,10 @@
 
     <!-- RECHTS: TIMER/TAAL + GUESSED -->
     <div class="col-12 col-lg-4 d-flex">
-      <div class="card shadow-sm w-100">
+      <div class="card shadow-sm w-100 d-flex flex-column">
         <div class="card-header py-2">
           <div class="d-flex align-items-center gap-2 justify-content-between">
-            <span class="fw-semibold">Guessed Words</span>
+            <span class="fw-semibold">Guessed words</span>
             <div class="d-flex align-items-center gap-2">
               <span class="badge bg-dark">
                 <i class="bi bi-clock-fill me-1"></i>
@@ -69,8 +69,8 @@
           </div>
         </div>
 
-        <div id="guessed-body" class="card-body p-0">
-          <ul class="list-group list-group-flush">
+        <div class="card-body p-0">
+          <ul class="list-group list-group-flush live-list">
             {% if guessed_words and guessed_words|length %}
               {% for guess in guessed_words %}
                 <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -92,7 +92,7 @@
           </ul>
         </div>
 
-        <div class="card-footer bg-transparent">
+        <div class="card-footer bg-transparent mt-auto">
           <form id="end-game-form" action="/boggle/{{ game.id }}/end" method="post" class="m-0">
             <button type="submit" class="btn btn-danger w-100">End game</button>
           </form>
@@ -128,17 +128,15 @@
     #game-root{ --cell: 56px; --gap: .5rem; }
   }
 
-    :root { --push: clamp(64px, 12vh, 160px); }     /* desktop lager, mobiel minder */
-    .push-down { padding-top: var(--push); padding-bottom: 2rem; }
+  :root { --push: clamp(64px, 12vh, 160px); }
+  .push-down { padding-top: var(--push); padding-bottom: 2rem; }
 
-    @media (max-width: 576px){
-    :root { --push: clamp(16px, 6vh, 56px); }     /* op kleine schermen niet te veel */
-    }
+  @media (max-width: 576px){
+    :root { --push: clamp(16px, 6vh, 56px); }
+  }
 
-    #guessed-body {
-  max-height: 300px;   /* kies wat goed uitkomt */
-  overflow-y: auto;    /* verticale scrollbar als nodig */
-}
+  /* Scrollbare live-woordenlijst zoals end-page */
+  .live-list{ max-height: 360px; overflow-y: auto; }
 </style>
 
 <script>
@@ -146,7 +144,7 @@
   const endForm = document.getElementById('end-game-form');
   const remainingEl = document.getElementById('remaining-time');
 
-  // Zorg dat we een echt getal hebben
+  // Zorg voor een getal
   let t = parseInt('{{ amount_time|default(0)|int }}', 10);
   if (Number.isNaN(t) || t < 0) t = 0;
 
@@ -162,38 +160,25 @@
     ended = true;
     disableUI();
     if (remainingEl) remainingEl.textContent = "Time's up!";
-
-    // Submit het bestaande formulier → werkt ook met CSRF/session
-    if (endForm) {
-      endForm.submit();
-      return;
-    }
-    // Fallback: ga naar de eindpagina
-    window.location.href = '/boggle/{{ game.id }}/end';
+    if (endForm) endForm.submit(); else window.location.href = '/boggle/{{ game.id }}/end';
   };
 
-  // Tick om de klok te tonen
   const tick = () => {
     if (remainingEl) remainingEl.textContent = fmt(Math.max(0, t));
     if (t <= 0) return;
     t -= 1;
   };
 
-  // Start direct en dan elke seconde
+  // Start
   tick();
   const intervalId = setInterval(() => {
     tick();
-    if (t <= 0) {
-      clearInterval(intervalId);
-      endGame();
-    }
+    if (t <= 0) { clearInterval(intervalId); endGame(); }
   }, 1000);
 
-  // Extra veiligheidsnet: forceer einde na t seconden (zelfs als interval stopt)
+  // Hard fallback
   setTimeout(endGame, Math.max(0, t) * 1000 + 200);
 })();
 </script>
 
-
 {% endblock %}
-

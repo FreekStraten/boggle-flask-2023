@@ -30,17 +30,17 @@ def create_game():
         amount_time = request.form['amount_time']
         lang = request.form['lang']
 
-        # validate the request form that the size is an integer
-        if not board_size.isdigit() and amount_time.isdigit():
+        if not board_size.isdigit() or not amount_time.isdigit():
             return render_template('boggle/creategame.html',
-                                   error_message='Board size and amount time must be an integer')
+                                   error_message='Board size and amount time must be integers')
+
         board_size = int(board_size)
         amount_time = int(amount_time)
+
         try:
             font_size = 6 / board_size
             board = Board(board_size)
             processed_dice = [(i, die) for i, die in enumerate(board.board)]
-
         except ValueError:
             return render_template('boggle/creategame.html', error_message='Board size must be an integer')
 
@@ -48,20 +48,23 @@ def create_game():
         if not userid:
             return render_template('boggle/creategame.html', error_message='User not logged in')
 
-        # check that lang is either 'nl' or 'en'
-        if lang != 'nl' and lang != 'en':
-            return render_template('boggle/creategame.html', error_message='Language must be either "nl" or "en"')
+        if lang not in ('nl', 'en'):
+            return render_template('boggle/creategame.html', error_message='Language must be "nl" or "en"')
 
-        # insert the new game into the database
-        insert_query('INSERT INTO games (player_id, grid_size, board_configuration, '
-                     'words_correct, completion_time, amount_time, lang) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                     (userid, board_size, str(board.board), '', 0.0, amount_time, lang))
+        # Bewaar originele tijd in session (voor end-screen)
+        session['initial_time'] = amount_time
 
-        # redirect to the game page, of the game that was just created
+        insert_query(
+            'INSERT INTO games (player_id, grid_size, board_configuration, words_correct, completion_time, amount_time, lang) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (userid, board_size, str(board.board), '', 0.0, amount_time, lang)
+        )
+
         game_id = select_query('SELECT id FROM games WHERE player_id = ? ORDER BY id DESC LIMIT 1', (userid,))[0]['id']
         return redirect(url_for('game.boggle', game_id=game_id))
     else:
         return render_template('boggle/creategame.html')
+
 
 
 @requires_auth
@@ -212,18 +215,15 @@ def end_game(game_id):
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
 
-        # get all guessed words from the database
     guessed_words = select_query('SELECT * FROM guessed_words WHERE game_id = ?', (game_id,))
     game_data = select_query('SELECT * FROM games WHERE id = ?', (game_id,))
-    if not game_data or len(game_data) == 0:
+    if not game_data:
         flash('Invalid game ID', 'error')
         return redirect(url_for('game.my_games'))
 
     game_row = game_data[0]
-    if len(game_row) < 6:
-        flash('Invalid game data', 'error')
-        return redirect(url_for('game.my_games'))
 
+    # Maak session['game'] opnieuw op (zoals in boggle())
     session['game'] = {
         'id': game_row['id'],
         'player_id': game_row['player_id'],
@@ -244,35 +244,50 @@ def end_game(game_id):
     session['board'] = json.dumps(Board(session['game']['grid_size'], evaluated_board),
                                   default=lambda x: x.__dict__)
 
-    # Calculate the remaining time based on the start time and amount_time
-    start_time = datetime.now()  # Set the start time when the game is started or created
-    remaining_time = session['game']['amount_time'] - (datetime.now() - start_time).seconds
+    # (we tonen de oorspronkelijke tijd in end-screen)
+    def _fmt(sec):
+        try:
+            sec = int(sec)
+        except Exception:
+            sec = 0
+        sec = max(0, sec)
+        return f"{sec//60:02d}:{sec%60:02d}"
+
+    # Prefer session value; fallback als die er niet is
+    initial_time = session.get('initial_time')
+    if initial_time is None:
+        # laatste redmiddel: probeer completion_time + amount_time (kan afwijken)
+        try:
+            initial_time = int(game_row.get('completion_time') or 0) + int(game_row.get('amount_time') or 0)
+        except Exception:
+            initial_time = int(game_row.get('amount_time') or 0)
+    initial_time_fmt = _fmt(initial_time)
 
     lang = session['game']['lang']
-    word_magician = WordGuesser(language=lang, found_words=guessed_words)
-    possible_words = set()
+    word_magician = WordGuesser(language=lang, found_words=[w['word'].lower() for w in guessed_words])
 
-    total_score = 0
-    for word in guessed_words:
-        total_score += word['score']
+    total_score = sum((w['score'] or 0) for w in guessed_words)
 
-    # if it is a get request, get from the input field called amount
     if request.method == 'POST':
-        # update the game in the db
-        insert_query('UPDATE games SET completion_time = ?, has_ended = ?, score = ? WHERE id = ?',
-                     (remaining_time, True, total_score, game_id))
+        # Markeer spel als beëindigd; completion_time hier laten staan zoals je hem gebruikt
+        insert_query('UPDATE games SET has_ended = ?, score = ? WHERE id = ?',
+                     (True, total_score, game_id))
 
-        possible_words = word_magician.get_possible_words(session['game']['board_configuration'])
-    else:
-        possible_words = word_magician.get_possible_words(session['game']['board_configuration'], )
+    possible_words = word_magician.get_possible_words(session['game']['board_configuration'])
 
-    return render_template('boggle/endedgame.html', game=session['game'], dice=session['processed_dice'],
-                           board_size=session['board_size'], font_size=session['font_size'],
+    # formatted_time is niet meer relevant; we tonen initial_time_fmt
+    return render_template('boggle/endedgame.html',
+                           game=session['game'],
+                           dice=session['processed_dice'],
+                           board_size=session['board_size'],
+                           font_size=session['font_size'],
                            current_word=json.loads(session['board'],
                                                    object_hook=lambda d: SimpleNamespace(**d)).current_word,
-                           guessed_words=guessed_words, amount_time=remaining_time,
-                           possible_words=possible_words, lang=session['game']['lang'],
-                           total_score=total_score)
+                           guessed_words=guessed_words,
+                           lang=session['game']['lang'],
+                           possible_words=possible_words,
+                           total_score=total_score,
+                           initial_time_fmt=initial_time_fmt)
 
 
 @requires_auth
