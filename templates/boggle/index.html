@@ -87,13 +87,13 @@
                 </li>
               {% endfor %}
             {% else %}
-              <li class="list-group-item text-muted">Nog geen woorden…</li>
+              <li class="list-group-item text-muted">No words yet…</li>
             {% endif %}
           </ul>
         </div>
 
         <div class="card-footer bg-transparent">
-          <form action="/boggle/{{ game.id }}/end" method="post" class="m-0">
+          <form id="end-game-form" action="/boggle/{{ game.id }}/end" method="post" class="m-0">
             <button type="submit" class="btn btn-danger w-100">End game</button>
           </form>
         </div>
@@ -142,12 +142,54 @@
 </style>
 
 <script>
-  // Timer (simpel)
-  let t = {{ amount_time }};
-  const el = document.getElementById('remaining-time');
-  const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
-  const tick = () => { if (t < 0) { clearInterval(id); el.textContent = "Time's up!"; return; } el.textContent = fmt(t--); };
-  const id = setInterval(tick, 1000); tick();
+  const endForm = document.getElementById("end-game-form");
+  const remainingEl = document.getElementById("remaining-time");
+  const rawTime = '{{ amount_time|default(0, true) }}';
+  let timeLeft = Number(rawTime);
+  if (!Number.isFinite(timeLeft)) {
+    timeLeft = 0;
+  }
+  timeLeft = Math.max(0, Math.floor(timeLeft));
+  let hasEnded = false;
+
+  const formatTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return String(minutes).padStart(2, "0") + ":" + String(secs).padStart(2, "0");
+  };
+
+  const endGame = () => {
+    if (hasEnded) {
+      return;
+    }
+    hasEnded = true;
+    if (endForm) {
+      endForm.submit();
+    } else if (remainingEl) {
+      remainingEl.textContent = "Time is up!";
+    }
+  };
+
+  const tick = () => {
+    if (!remainingEl) {
+      endGame();
+      return;
+    }
+
+    if (timeLeft <= 0) {
+      remainingEl.textContent = formatTime(0);
+      clearInterval(timerId);
+      endGame();
+      return;
+    }
+
+    remainingEl.textContent = formatTime(timeLeft);
+    timeLeft -= 1;
+  };
+
+  let timerId = setInterval(tick, 1000);
+  tick();
 </script>
 
 {% endblock %}
+
