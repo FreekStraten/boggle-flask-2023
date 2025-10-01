@@ -1,5 +1,11 @@
 # Boggle (Flask)
 
+![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-2.x-black?logo=flask)
+![Status](https://img.shields.io/badge/status-archived-inactive)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
+![SQLite](https://img.shields.io/badge/SQLite-3-003B57?logo=sqlite&logoColor=white)
+
 Eén-speler Boggle als Python/Flask webapp. Woordenvalidatie, timer/training-modus en basisstatistieken.  
 **Status:** Archived · **Rol:** Duo (coursework) · **Jaar:** 2023
 
